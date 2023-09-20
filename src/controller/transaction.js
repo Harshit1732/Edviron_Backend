@@ -1,3 +1,4 @@
+const { response } = require("../app");
 const transaction = require("../model/transaction");
 
 const studentservice = require("../services/studentservice");
@@ -38,18 +39,32 @@ const getpercentage = async (req, res) => {
       (t) => t.payment_mode === "CHEQUE"
     ).length;
 
-     console.log(totalTransactions);
+    console.log(totalTransactions);
     const onlinePercentage = (onlinePayments / totalTransactions) * 100;
     const cashPercentage = (cashPayments / totalTransactions) * 100;
     const chequePercentage = (chequePayments / totalTransactions) * 100;
 
     const percentages = {
-      online: onlinePercentage,
-      cash: cashPercentage,
-      cheque: chequePercentage,
+      online: Math.floor(onlinePercentage),
+      cash: Math.floor(cashPercentage),
+      cheque: Math.floor(chequePercentage),
     };
+    const data = [
+        {
+            label: "Online",
+            value: percentages.online
+        },
+        {
+            label: "Cash",
+            value: percentages.cash
+        },
+        {
+            label: "Cheque",
+            value: percentages.cheque
+        },
+    ];
 
-    res.json(percentages);
+    res.json(data);
   } catch (err) {
     res.status(400).json({ message: "error getting transaction" });
   }
@@ -119,6 +134,54 @@ const collectionInmonths = async (req, res) => {
   }
 };
 
+const gettransactions = async (req, res) => {
+  try {
+    // Fetch data from the database
+    const transactions = await transaction.find({});
+
+    // Map the data to the desired format
+    const formattedData = transactions.map((transaction) => {
+      const date = new Date(transaction.createdAt); // Assuming createdAt is the date field
+      const formattedDate = `${date.toLocaleString("en-us", {
+        month: "long",
+      })} ${date.getDate()}, ${date.getFullYear()}`;
+
+      let status = "Pending";
+      if (transaction.status === "SUCCESS") {
+        status = "Successful";
+      }
+      return {
+        date: formattedDate,
+        amount: transaction.amount, // Assuming student has a 'name' field
+        status: status,
+      };
+    });
+
+    const data=[];
+    if(formattedData.length>4)
+    {
+       for(let i=0;i<4;i++)
+       {
+        data.push(formattedData[i]);
+
+       }
+       res.send(data);
+
+    }
+
+
+    res.send(formattedData);
+  } catch (erro) {
+    res.status(500).json({ message: "error while fetching data" });
+  }
+};
+
 // Call the function to calculate the total for the current month
 
-module.exports = { getpercentage, totalcollection, collectionInmonths, createtransaction};
+module.exports = {
+  getpercentage,
+  totalcollection,
+  collectionInmonths,
+  createtransaction,
+  gettransactions,
+};
