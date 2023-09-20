@@ -74,7 +74,7 @@ const totalcollection = async (req, res) => {
 const collectionInmonths = async (req, res) => {
   try {
     // Get the current date to determine the month and year
-    const currentDate = new Date("2023-04-13T06:48:56.128+00:00");
+    const currentDate = new Date();
     // Calculate the first day of the current month
     const firstDayOfMonth = new Date(
       currentDate.getFullYear(),
@@ -94,7 +94,7 @@ const collectionInmonths = async (req, res) => {
 
     // Query the database for "success" transactions within the current month
     const successTransactions = await transaction.find({
-      status: "success",
+      status: "SUCCESS",
       createdAt: {
         $gte: firstDayOfMonth,
         $lte: lastDayOfMonth,
