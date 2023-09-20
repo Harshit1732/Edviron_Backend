@@ -50,18 +50,18 @@ const getpercentage = async (req, res) => {
       cheque: Math.floor(chequePercentage),
     };
     const data = [
-        {
-            label: "Online",
-            value: percentages.online
-        },
-        {
-            label: "Cash",
-            value: percentages.cash
-        },
-        {
-            label: "Cheque",
-            value: percentages.cheque
-        },
+      {
+        label: "Online",
+        value: percentages.online,
+      },
+      {
+        label: "Cash",
+        value: percentages.cash,
+      },
+      {
+        label: "Cheque",
+        value: percentages.cheque,
+      },
     ];
 
     res.json(data);
@@ -87,50 +87,58 @@ const totalcollection = async (req, res) => {
 };
 
 const collectionInmonths = async (req, res) => {
+  let totalmonthscollection = 0;
+
   try {
     // Get the current date to determine the month and year
     const currentDate = new Date();
-    // Calculate the first day of the current month
-    const firstDayOfMonth = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth(),
-      1
-    );
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth();
 
-    // Calculate the last day of the current month
-    const lastDayOfMonth = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth() + 1,
-      0,
-      23,
-      59,
-      59
-    );
+    // Initialize an array to store monthly totals
+    const monthlyTotals = [];
 
-    // Query the database for "success" transactions within the current month
-    const successTransactions = await transaction.find({
-      status: "SUCCESS",
-      createdAt: {
-        $gte: firstDayOfMonth,
-        $lte: lastDayOfMonth,
-      },
-    });
+    // Loop through each month of the current year
+    for (let month = 0; month <= currentMonth; month++) {
+      // Calculate the first day of the current month
+      const firstDayOfMonth = new Date(currentYear, month, 1);
 
-    // Calculate the total amount for "success" transactions
-    const totalAmount = successTransactions.reduce((acc, Transaction) => {
-      return acc + Transaction.amount;
-    }, 0);
+      // Calculate the last day of the current month
+      const lastDayOfMonth = new Date(currentYear, month + 1, 0, 23, 59, 59);
 
-    console.log(
-      `Total amount for "success" transactions in ${currentDate.toLocaleString(
-        "default",
-        { month: "long" }
-      )}: ${totalAmount}`
-    );
+      // Query the database for "success" transactions within the current month
+      const successTransactions = await transaction.find({
+        status: "SUCCESS",
+        createdAt: {
+          $gte: firstDayOfMonth,
+          $lte: lastDayOfMonth,
+        },
+      });
 
-    res.json(totalAmount);
+      // Calculate the total amount for "success" transactions
+      const totalAmount = successTransactions.reduce((acc, Transaction) => {
+        return acc + Transaction.amount;
+      }, 0);
+
+      // Add the monthly total to the array
+      monthlyTotals.push({
+        month: currentMonth,
+        year: currentYear,
+        totalAmount: totalAmount,
+      });
+      totalmonthscollection = totalmonthscollection + totalAmount;
+    }
+    const monthlystatus = {
+      months: monthlyTotals,
+      totals: totalmonthscollection,
+    };
+
+    // console.log(monthlystatus);
+
+    res.json(monthlystatus);
   } catch (error) {
-    console.error("Error calculating monthly total:", error);
+    console.error("Error calculating monthly totals:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
@@ -157,18 +165,13 @@ const gettransactions = async (req, res) => {
       };
     });
 
-    const data=[];
-    if(formattedData.length>4)
-    {
-       for(let i=0;i<4;i++)
-       {
+    const data = [];
+    if (formattedData.length > 4) {
+      for (let i = 0; i < 4; i++) {
         data.push(formattedData[i]);
-
-       }
-       res.send(data);
-
+      }
+      res.send(data);
     }
-
 
     res.send(formattedData);
   } catch (erro) {
